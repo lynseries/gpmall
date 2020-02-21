@@ -269,8 +269,9 @@ public class ExtensionLoader<T> {
     }
 
     private static void check(Class type) {
-        if (type == null)
+        if (type == null) {
             throw new IllegalArgumentException("Extension type == null");
+        }
         if (!type.isInterface()) {
             throw new IllegalArgumentException("Extension type(" + type + ") is not interface!");
         }

@@ -268,4 +268,12 @@ public class VerifyCodeUtils {
         return rs;
     }
 
+    public static void main(String[] args) throws IOException {
+        ImageResult result = VerifyCodeUtils.VerifyCode(140, 43, 4);
+        System.out.println(result.getCode());
+        System.out.println(result.getImg());
+
+        VerifyCodeUtils.outputImage(500, 200,new File("C:\\Users\\liuyanan\\Desktop\\新建文件夹\\a.jpg"),result.getCode());
+    }
+
 }
