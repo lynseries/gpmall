@@ -12,10 +12,16 @@ import com.gpmall.shopping.form.OrderDetail;
 import com.gpmall.shopping.form.PageInfo;
 import com.gpmall.shopping.form.PageResponse;
 import com.gpmall.user.intercepter.TokenIntercepter;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import org.apache.dubbo.config.annotation.Reference;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
  * 腾讯课堂搜索【咕泡学院】
@@ -25,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @RestController
 @RequestMapping("/shopping")
+@Api(tags = "OrderController", description = "订单控制层")
 public class OrderController {
 
     @Reference(timeout = 3000)
@@ -37,11 +44,13 @@ public class OrderController {
      * 创建订单
      */
     @PostMapping("/order")
+    @ApiOperation("创建订单")
     public ResponseData order(@RequestBody CreateOrderRequest request,HttpServletRequest servletRequest){
         String userInfo=(String)servletRequest.getAttribute(TokenIntercepter.USER_INFO_KEY);
         JSONObject object= JSON.parseObject(userInfo);
         Long uid=Long.parseLong(object.get("uid").toString());
         request.setUserId(uid);
+        request.setUniqueKey(UUID.randomUUID().toString());
         CreateOrderResponse response=orderCoreService.createOrder(request);
         if(response.getCode().equals(OrderRetCode.SUCCESS.getCode())){
             return new ResponseUtil<>().setData(response.getOrderId());
@@ -54,6 +63,11 @@ public class OrderController {
      * @return
      */
     @GetMapping("/order")
+    @ApiOperation("获取当前用户的所有订单")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "pageInfo", value = "分页信息", dataType = "PageInfo", required = true),
+            @ApiImplicitParam(name = "servletRequest", value = "HttpServletRequest", dataType = "HttpServletRequest", required = true)
+    })
     public ResponseData orderByCurrentId(PageInfo pageInfo,HttpServletRequest servletRequest){
         OrderListRequest request = new OrderListRequest();
         request.setPage(pageInfo.getPage());
@@ -78,6 +92,8 @@ public class OrderController {
      * @return
      */
     @GetMapping("/order/{id}")
+    @ApiOperation("查询订单详情")
+    @ApiImplicitParam(name = "id", value = "订单ID", paramType = "path")
     public ResponseData orderDetail(@PathVariable String id){
         OrderDetailRequest request=new OrderDetailRequest();
         request.setOrderId(id);
@@ -99,9 +115,13 @@ public class OrderController {
      * 取消订单
      * @return
      */
-    @PutMapping("/order")
-    public ResponseData orderCancel(){
-        return new ResponseUtil<>().setData(null);
+    @ApiOperation("取消订单")
+    @PutMapping("/order/{id}")
+    @ApiImplicitParam(name = "id", value = "订单ID", paramType = "path")
+    public ResponseData orderCancel(@PathVariable String id){
+        CancelOrderRequest request =new CancelOrderRequest ();
+        request.setOrderId(id);
+        return new ResponseUtil<>().setData(orderCoreService.cancelOrder(request));
     }
 
     /**
@@ -109,9 +129,13 @@ public class OrderController {
      * @param id
      * @return
      */
+    @ApiOperation("删除订单")
     @DeleteMapping("/order/{id}")
+    @ApiImplicitParam(name = "id", value = "订单ID", paramType = "path")
     public ResponseData orderDel(@PathVariable String id){
-        return new ResponseUtil<>().setData(null);
+        DeleteOrderRequest deleteOrderRequest=new DeleteOrderRequest();
+        deleteOrderRequest.setOrderId(id);
+        return new ResponseUtil<>().setData(orderCoreService.deleteOrder(deleteOrderRequest));
     }
 
 }
